@@ -10,6 +10,7 @@ class AurhorizeNetEcheck{
 		'arb' => array('ARB', 'ARB')
 	);
 	
+		
 	static function init(){
 		add_filter('gform_field_type_title', array(get_class(), 'gform_field_type_title'));
 		add_filter('gform_add_field_buttons', array(get_class(), 'add_new_fieds_button'));
@@ -141,18 +142,18 @@ class AurhorizeNetEcheck{
 			$arb_days = esc_attr(rgget($field["id"],$value));			
 
 			$tabindex = GFCommon::get_tabindex();
-			$account_type_input = "<span class='ginput_full{$class_suffix}' id='{$field_id}_container' >" .
+			$arb_interval_input = "<span class='ginput_full{$class_suffix}' id='{$field_id}_container' >" .
 									
 									"<select $disabled_text name='input_{$id}' id='{$field_id}_1' >" . 
-									self::get_bank_account_types($account_type) . 									
+									self::get_arb_intervals($arb_days) . 									
 									"</select>" .
 									
-									"<label id='{$field_id}_4_label' for='{$field_id}_1'> Account Type </label>" .
+									"<label id='{$field_id}_4_label' for='{$field_id}_1'> select a recurring interval </label>" .
 									"</span>";
 			
 			$suffix = "</div>";
 			
-
+			return $prefix . $arb_interval_input . $suffix;
 			
 		endif;
 		
@@ -174,6 +175,13 @@ class AurhorizeNetEcheck{
                             new Input(field.id + 0.5, '<?php echo esc_js(apply_filters("authorizenet_account_type_" . rgget("id"), apply_filters("authorizenet_account_type",__("Account Type", "gravityforms"), rgget("id")), rgget("id"))); ?>')];
                 
                 break;
+                
+           case "arb" :
+           		if(!field.label) {
+           			field.label = "<?php _e("Is this a recurring gift?", "gravityfroms") ?>"
+           		} 
+           		
+           	   break;
 		<?php
 	}
 	
@@ -229,5 +237,20 @@ class AurhorizeNetEcheck{
 		if($position == 50) :
 			
 		endif;
+	}
+	
+	
+	/*
+	 * get arb intervals
+	 * */
+	static function get_arb_intervals($selected_interval){
+		$intervals = array(0=>'No, one-time only', 7=>'Weekly', 30=>'Monthly', 365=>'Yearly');
+		$options = '';
+		foreach($intervals as $key=>$interval){
+			$selected = ($selected_interval == $key) ? "selected='selected'" : "";
+			$options .= "<option value={$key} {$selected} >{$interval}</option>";
+		}
+		
+		return $options;
 	}
 }
