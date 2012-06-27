@@ -42,13 +42,13 @@ class AurhorizeNetEcheck{
 				$group['fields'][] = array(
 					'class' => 'button',
 					'value' => __("Echeck", "gravityforms"),
-					'onclick' => "StartAddField('echeck')"
+					'onclick' => "add_authorize_fields('echeck')"
 				);
 				
 				$group['fields'][] = array(
 					'class' => 'button',
 					'value' => __("ARB", "gravityforms"),
-					'onclick' => "StartAddField('arb')"
+					'onclick' => "add_authorize_fields('arb')"
 				);
 			}
 		}                         
@@ -215,19 +215,38 @@ class AurhorizeNetEcheck{
 		<script type='text/javascript'>
 	
 			jQuery(document).ready(function($) {
-				//Add all textarea settings to the "TOS" field plus custom "tos_setting"
-				// fieldSettings["tos"] = fieldSettings["textarea"] + ", .tos_setting"; // this will show all fields that Paragraph Text field shows plus my custom setting
-		
-				// from forms.js; can add custom "tos_setting" as well
-				fieldSettings["echeck"] = ".label_setting, .description_setting, .admin_label_setting, .size_setting, .default_value_textarea_setting, .error_message_setting, .css_class_setting, .visibility_setting, .echeck_setting"; //this will show all the fields of the Paragraph Text field minus a couple that I didn't want to appear.
-		
-				//binding to the load field settings event to initialize the checkbox
-				$(document).bind("gform_load_field_settings", function(event, field, form){
-					jQuery("#field_tos").attr("checked", field["field_tos"] == true);
-					$("#field_tos_value").val(field["tos"]);
-				});
+				//Add all default settings"
+				
+				fieldSettings["echeck"] = ".label_setting, .description_setting, .admin_label_setting, .size_setting, .error_message_setting, .css_class_setting, .visibility_setting, .conditional_logic_field_setting, .rules_setting"; //this will show all the fields of the Paragraph Text field minus a couple that I didn't want to appear.
+				fieldSettings["arb"] = ".label_setting, .description_setting, .admin_label_setting, .size_setting, .error_message_setting, .css_class_setting, .visibility_setting, .conditional_logic_field_setting, .rules_setting";
+
+											
 			});
-		
+
+			//allow the echeck and ARB to be added once in a form
+			function add_authorize_fields(type){
+				switch(type){
+					case "echeck" :
+						 if(GetFieldsByType(["echeck"]).length > 0){
+				                alert("<?php _e("Only one Echeck field can be added to the form", "gravityforms") ?>");
+				                return false;
+				            }
+				            else{
+								StartAddField("echeck");
+							}
+					break;
+					case "arb" :
+						 if(GetFieldsByType(["arb"]).length > 0){
+				                alert("<?php _e("Only one ARB field can be added to the form", "gravityforms") ?>");
+				                return false;
+				            }
+				            else{
+								StartAddField("arb");
+							}
+					break;
+						 
+				}
+			}
 		</script>
 		
 		<?php 	
