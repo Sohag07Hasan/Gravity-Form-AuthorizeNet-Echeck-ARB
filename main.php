@@ -12,5 +12,8 @@ define('GfAuthorizeNetEcheckARB', dirname(__FILE__));
 define('GfAuthorizeNetEcheckARB_FILE', __FILE__);
 define('GfAuthorizeNetEcheckARB_URL', plugins_url('', __FILE__));
 
+include GfAuthorizeNetEcheckARB . '/classes/authorizenet-settings.php';
+AuthorizeNetSettings::init();
+
 include GfAuthorizeNetEcheckARB . '/classes/Echeck.php';
 AurhorizeNetEcheck::init();

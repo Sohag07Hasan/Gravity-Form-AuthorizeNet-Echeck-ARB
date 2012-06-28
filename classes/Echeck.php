@@ -19,7 +19,7 @@ class AurhorizeNetEcheck{
 		
 		add_filter( "gform_field_input" , array(get_class(), "add_echck_input_fields"), 10, 5 );
 		
-		add_filter('gform_validation', array(get_class(), 'validate'), 100);
+		add_filter('gform_validation', array(get_class(), 'validate'), 1000);
 		
 		//add javascript
 		add_action( "gform_editor_js", array(get_class(), "authorizenet_gform_editor_js"));
@@ -107,22 +107,22 @@ class AurhorizeNetEcheck{
 			endif;
 
 			$tabindex = GFCommon::get_tabindex();
-			$routing_no_input = sprintf("<span class='ginput_full{$class_suffix}' id='{$field_id}_1_container'><input type='text' name='input_%d.1' id='%s_1.1' value='%s' {$tabindex} %s /> <label for='%s_1.1' id='{$field_id}_1_label'>" . apply_filters("authorisenet_routing_number_{$form_id}", apply_filters("authorisenet_routing_number",__("Checking Account Routing Number", "gravityforms"), $form_id), $form_id) . "</label></span>", $id, $field_id, $routing_no, $disabled_text, $field_id);
+			$routing_no_input = sprintf("<span class='ginput_full{$class_suffix}' id='{$field_id}_1_container'><input type='text' name='input_%d_1' id='%s_1.1' value='%s' {$tabindex} %s /> <label for='%s_1.1' id='{$field_id}_1_label'>" . apply_filters("authorisenet_routing_number_{$form_id}", apply_filters("authorisenet_routing_number",__("Checking Account Routing Number", "gravityforms"), $form_id), $form_id) . "</label></span>", $id, $field_id, $routing_no, $disabled_text, $field_id);
 			
 			$tabindex = GFCommon::get_tabindex();
-			$account_no_input = sprintf("<span class='ginput_full{$class_suffix}' id='{$field_id}_2_container'><input type='text' name='input_%d.2' id='%s_1.2' value='%s' {$tabindex} %s /> <label for='%s_1.2' id='{$field_id}_2_label'>" . apply_filters("authorisenet_account_number_{$form_id}", apply_filters("authorisenet_acount_number",__("Checking Account Number", "gravityforms"), $form_id), $form_id) . "</label></span>", $id, $field_id, $account_no, $disabled_text, $field_id);
+			$account_no_input = sprintf("<span class='ginput_full{$class_suffix}' id='{$field_id}_2_container'><input type='text' name='input_%d_2' id='%s_1.2' value='%s' {$tabindex} %s /> <label for='%s_1.2' id='{$field_id}_2_label'>" . apply_filters("authorisenet_account_number_{$form_id}", apply_filters("authorisenet_acount_number",__("Checking Account Number", "gravityforms"), $form_id), $form_id) . "</label></span>", $id, $field_id, $account_no, $disabled_text, $field_id);
 			
 			$tabindex = GFCommon::get_tabindex();
-			$bank_name_input = sprintf("<span class='ginput_full{$class_suffix}' id='{$field_id}_3_container'><input type='text' name='input_%d.3' id='%s_1.3' value='%s' {$tabindex} %s /> <label for='%s_1.3' id='{$field_id}_3_label'>" . apply_filters("authorisenet_bank_name_{$form_id}", apply_filters("authorisenet_bank_name",__("Bank Name", "gravityforms"), $form_id), $form_id) . "</label></span>", $id, $field_id, $bank_name, $disabled_text, $field_id);
+			$bank_name_input = sprintf("<span class='ginput_full{$class_suffix}' id='{$field_id}_3_container'><input type='text' name='input_%d_3' id='%s_1.3' value='%s' {$tabindex} %s /> <label for='%s_1.3' id='{$field_id}_3_label'>" . apply_filters("authorisenet_bank_name_{$form_id}", apply_filters("authorisenet_bank_name",__("Bank Name", "gravityforms"), $form_id), $form_id) . "</label></span>", $id, $field_id, $bank_name, $disabled_text, $field_id);
 			
 			$tabindex = GFCommon::get_tabindex();
-			$account_name_input = sprintf("<span class='ginput_full{$class_suffix}' id='{$field_id}_4_container'><input type='text' name='input_%d.4' id='%s_1.4' value='%s' {$tabindex} %s /> <label for='%s_1.4' id='{$field_id}_4_label'>" . apply_filters("authorisenet_account_name_{$form_id}", apply_filters("authorisenet_account_name",__("Account Name", "gravityforms"), $form_id), $form_id) . "</label></span>", $id, $field_id, $account_name, $disabled_text, $field_id);
+			$account_name_input = sprintf("<span class='ginput_full{$class_suffix}' id='{$field_id}_4_container'><input type='text' name='input_%d_4' id='%s_1.4' value='%s' {$tabindex} %s /> <label for='%s_1.4' id='{$field_id}_4_label'>" . apply_filters("authorisenet_account_name_{$form_id}", apply_filters("authorisenet_account_name",__("Account Name", "gravityforms"), $form_id), $form_id) . "</label></span>", $id, $field_id, $account_name, $disabled_text, $field_id);
 			
 			//$account_type = sprintf("<span class='ginput_full{$class_suffix}' id='{$field_id}_3_container'><input type='text' name='input_%d.3' id='%s_1.3' value='%s' {$tabindex} %s /> <label for='%s_1.3' id='{$field_id}_3_label'>" . apply_filters("authorisenet_bank_name_{$form_id}", apply_filters("authorisenet_bank_name",__("Customer Bank Name", "gravityforms"), $form_id), $form_id) . "</label></span>", $id, $field_id, $account_no, $disabled_text, $field_id);
 			$tabindex = GFCommon::get_tabindex();
 			$account_type_input = "<span class='ginput_full{$class_suffix}' id='{$field_id}_5_container' >" .
 									
-									"<select $disabled_text name='input_{$id}.5' id='{$field_id}_1.5' >" . 
+									"<select $disabled_text name='input_{$id}_5' id='{$field_id}_1.5' >" . 
 									self::get_bank_account_types($account_type) . 									
 									"</select>" .
 									
@@ -169,12 +169,13 @@ class AurhorizeNetEcheck{
                 field.label = "<?php _e("Authorize.net Echeck", "gravityforms"); ?>";
                 
                 field.inputs = [new Input(field.id + 0.1, '<?php echo esc_js(apply_filters("authorisenet_routing_number_" . rgget("id"), apply_filters("authorisenet_routing_number",__("Checking Account Routing Number", "gravityforms"), rgget("id")), rgget("id"))); ?>'),
-                            new Input(field.id + 0.2, '<?php echo esc_js(apply_filters("authorisenet_acount_number_" . rgget("id"), apply_filters("authorisenet_acount_number",__("Checking Account Number", "gravityforms"), rgget("id")), rgget("id"))); ?>'),
+                			new Input(field.id + 0.2, '<?php echo esc_js(apply_filters("authorisenet_account_number_" . rgget("id"), apply_filters("authorisenet_account_number",__("Checking Account Number", "gravityforms"), rgget("id")), rgget("id"))); ?>'),
                             new Input(field.id + 0.3, '<?php echo esc_js(apply_filters("authorisenet_bank_name_" . rgget("id"), apply_filters("authorisenet_bank_name",__("Bank Name", "gravityforms"), rgget("id")), rgget("id"))); ?>'),
                             new Input(field.id + 0.4, '<?php echo esc_js(apply_filters("authorizenet_account_name_" . rgget("id"), apply_filters("authorizenet_account_name",__("Account Name", "gravityforms"), rgget("id")), rgget("id"))); ?>'),
                             new Input(field.id + 0.5, '<?php echo esc_js(apply_filters("authorizenet_account_type_" . rgget("id"), apply_filters("authorizenet_account_type",__("Account Type", "gravityforms"), rgget("id")), rgget("id"))); ?>')];
                 
                 break;
+                
                 
            case "arb" :
            		if(!field.label) {
@@ -202,11 +203,133 @@ class AurhorizeNetEcheck{
 	 * validate results
 	 * */
 	static function validate($validation_result){
-		$form = $validation_result["form"];
-		var_dump($form['fields']);
+		
+		$is_valid = $validation_result['is_valid'];
+		$echeck_verified = false;
+		$recurring_interval = 0;
+		
+		// 2 - Get the form object from the validation result
+		$form = $validation_result["form"];		
+		// 3 - Get the current page being validated
+		$current_page = rgpost('gform_source_page_number_' . $form['id']) ? rgpost('gform_source_page_number_' . $form['id']) : 1;
+		//loop thouth the form fields
+		
+				
+		foreach ($form['fields'] as &$field){
+			// 6 - Get the field's page number
+			$field_page = $field['pageNumber'];
+			
+			// 7 - Check if the field is hidden by GF conditional logic
+			$is_hidden = RGFormsModel::is_field_hidden($form, $field, array());
+
+			// 8 - If the field is not on the current page OR if the field is hidden, skip it
+			if($field_page != $current_page || $is_hidden) continue;
+			
+			//now original validation occurs
+			switch(RGFormsModel::get_input_type($field)){
+				case 'echeck' :					
+					if($field["isRequired"]) :
+					
+						$routing_number = trim($_POST["input_" . $field["id"] . "_1"]);
+						$account_number = trim($_POST["input_" . $field["id"] . "_2"]);
+						$bank_name = trim($_POST["input_" . $field["id"] . "_3"]);
+						$account_name = trim($_POST["input_" . $field["id"] . "_4"]);
+						$account_type = trim($_POST["input_" . $field["id"] . "_5"]);
+						if(empty($routing_number) || empty($account_name) || empty($bank_name) || empty($account_name)){
+							$field["failed_validation"] = true;
+							$field["validation_message"] = empty($field["errorMessage"]) ? __("Echeck field is required. There should not be any empty field.", "gravityforms") : $field["errorMessage"];
+							$is_valid = false;
+						}
+						else{
+							$echeck_verified = true;
+						}
+						
+					endif;
+					
+				break;
+				
+				case 'arb' :
+					$recurring_interval = trim($_POST["input_" . $field["id"]]);
+					
+			}
+		}
+		
+		if($echeck_verified && $is_valid) :
+			$response = self::make_echeck_payment($validation_result);
+		endif;
+		
+		$validation_result['form'] = $form;
+		$validation_result['is_valid'] = $is_valid;
+		return $validation_result;
+	}	
+	
+	
+	//make the payment
+	private static function make_echeck_payment($validation_result){
+		$form_data = self::get_form_data($validation_result);
+		
+		var_dump($form_data);
 		exit;
+		
+		$sale = self::get_aim();
 	}
 	
+	
+	/*
+	 * return form data basically price
+	 * */
+	static function get_form_data($validation_result){
+		$form_data = array();
+		$form = $validation_result['form'];
+		$tmp_lead = RGFormsModel::create_lead($form);
+        $products = GFCommon::get_product_fields($form, $tmp_lead);
+
+        $echeck_field = self::get_echeck_fields($form);
+        $recurring_field = self::get_arb_field($form);
+        
+        $form_data['bank_aba_code'] = rgpost("input_{$echeck_field["id"]}_1");
+        $form_data['bank_acct_num'] = rgpost("input_{$echeck_field["id"]}_2");
+        $form_data['bank_name'] = rgpost("input_{$echeck_field["id"]}_3");
+        $form_data['bank_acct_name'] = rgpost("input_{$echeck_field["id"]}_4");
+        $form_data['bank_acct_type'] = rgpost("input_{$echeck_field["id"]}_5");
+        $form_data['echeck_type'] = "WEB";
+        $form_data['routing_interval'] = rgpost("input_{$recurring_field["id"]}");
+        
+        $order_info = self::get_order_info($products);
+        $form_data['amount'] = $order_info['amount'];
+        
+        return $form_data;        
+	}
+	
+	
+	static function get_echeck_fields($form){
+		$fields = GFCommon::get_fields_by_type($form, array("echeck"));
+        return empty($fields) ? false : $fields[0];
+	}
+	
+	static function get_arb_field($form){
+		$fields = GFCommon::get_fields_by_type($form, array("arb"));
+        return empty($fields) ? false : $fields[0];
+	}
+	
+	//return the aim object
+	static function get_aim(){
+		$settings = self::get_authorizenet_options();
+		if(!class_exists('AuthorizeNetRequest')){
+            require_once self::get_base_dir() . "/anet_php_sdk/AuthorizeNet.php";
+		}
+		
+		$is_sandbox = $settings['mode'] == 'test';
+		
+		$aim = new AuthorizeNetAIM($settings["api_login_id"], $settings["trans_key"]);
+		$aim->setSandbox($is_sandbox);
+		return $aim;
+	}
+	
+	
+	static function get_authorizenet_options(){
+		return AuthorizeNetSettings::get_authorizenet_options();
+	}
 	
 	//js 
 	static function authorizenet_gform_editor_js(){
@@ -272,4 +395,46 @@ class AurhorizeNetEcheck{
 		
 		return $options;
 	}
+	
+	//return the base dir
+	static function get_base_dir(){
+		return GfAuthorizeNetEcheckARB;
+	}
+	
+	private static function get_order_info($products){
+        $amount = 0;
+        $line_items = array();
+        $item = 1;
+        foreach($products["products"] as $field_id => $product)
+        {            
+            $quantity = $product["quantity"] ? $product["quantity"] : 1;
+            $product_price = GFCommon::to_number($product['price']);
+
+            $options = array();
+            if(is_array($product["options"])){
+                foreach($product["options"] as $option){
+                    $options[] = $option["option_label"];
+                    $product_price += $option["price"];
+                }
+            }
+
+            $amount += $product_price * $quantity;
+
+            $description = "";
+            if(!empty($options))
+                $description = __("options: ", "gravityformsauthorizenet") . " " . implode(", ", $options);
+
+            if($product_price >= 0){
+                $line_items[] = array("item_id" =>'Item ' . $item, "item_name"=>$product["name"], "item_description" =>$description, "item_quantity" =>$quantity, "item_unit_price"=>$product["price"], "item_taxable"=>"Y");
+                $item++;
+            }
+        }
+
+        if(!empty($products["shipping"]["name"]) && !is_numeric($recurring_field)){
+            $line_items[] = array("item_id" =>'Item ' . $item, "item_name"=>$products["shipping"]["name"], "item_description" =>"", "item_quantity" =>1, "item_unit_price"=>$products["shipping"]["price"], "item_taxable"=>"Y");
+            $amount += $products["shipping"]["price"];
+        }
+
+        return array("amount" => $amount, "line_items" => $line_items);
+    }
 }
