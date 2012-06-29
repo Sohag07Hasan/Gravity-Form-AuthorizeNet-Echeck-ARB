@@ -10,6 +10,8 @@ class AurhorizeNetEcheck{
 		'arb' => array('ARB', 'ARB')
 	);
 	
+	static $echeck_paid = false;
+	static $aim_response = false;
 		
 	static function init(){
 		add_filter('gform_field_type_title', array(get_class(), 'gform_field_type_title'));
@@ -97,13 +99,13 @@ class AurhorizeNetEcheck{
 			$recurring_interval = 0;
 			
 			$prefix = "<div class='ginput_complex ginput_container authorizenet_echeck_fields'>";
-					
+			
 			if(is_array($value)) :
-				$routing_no = esc_attr(rgget($field["id"] . ".1",$value));
-				$account_no = esc_attr(rgget($field["id"] . ".2",$value));
-				$bank_name = esc_attr(rgget($field["id"] . ".3",$value));
-				$account_name = esc_attr(rgget($field["id"] . ".4",$value));
-				$account_type = esc_attr(rgget($field["id"] . ".5",$value));				
+				$routing_no = esc_attr(rgpost("input_" . $field["id"] . "_1"));
+				$account_no = esc_attr(rgpost("input_" . $field["id"] . "_2"));
+				$bank_name = esc_attr(rgpost("input_" . $field["id"] . "_3"));
+				$account_name = esc_attr(rgpost("input_" . $field["id"] . "_4"));
+				$account_type = esc_attr(rgpost("input_" . $field["id"] . "_5"));				
 			endif;
 
 			$tabindex = GFCommon::get_tabindex();
@@ -139,27 +141,48 @@ class AurhorizeNetEcheck{
 
 			$prefix = "<div class='ginput_complex ginput_container authorizenet_echeck_fields'>";		
 			
-			$arb_days = esc_attr(rgget($field["id"],$value));			
-
+			$arb_days = esc_attr(rgpost("input_" . $field["id"] . "_1"));
+			$arb_occurances = esc_attr(rgpost("input_" . $field["id"] . "_2"));			
+						
 			$tabindex = GFCommon::get_tabindex();
-			$arb_interval_input = "<span class='ginput_full{$class_suffix}' id='{$field_id}_container' >" .
+			$arb_interval_input = "<span class='ginput_left{$class_suffix}' id='{$field_id}_container' >" .
 									
-									"<select $disabled_text name='input_{$id}' id='{$field_id}_1' >" . 
+									"<select $disabled_text name='input_{$id}_1' id='{$field_id}.1' >" . 
 									self::get_arb_intervals($arb_days) . 									
 									"</select>" .
 									
 									"<label id='{$field_id}_4_label' for='{$field_id}_1'> select a recurring interval </label>" .
 									"</span>";
+			$arb_occurance_limit = "<span class='ginput_right{$class_suffix}' id='{$field_id}_container' >" .
+									
+									"<select $disabled_text name='input_{$id}_2' id='{$field_id}.2' >" . 
+									self::get_arb_occurances($arb_occurances) . 									
+									"</select>" .
+									
+									"<label id='{$field_id}_5_label' for='{$field_id}_2'> Total occurrances </label>" .
+									"</span>";
 			
 			$suffix = "</div>";
 			
-			return $prefix . $arb_interval_input . $suffix;
+			return $prefix . $arb_interval_input . $arb_occurance_limit . $suffix;
 			
 		endif;
 		
 		return $input;
 	}
 	
+	
+	static function get_arb_occurances($arb_occurances){
+		$selected = ($arb_occurances == -1) ? "selected='selected'" : "";
+		
+		$options = "<option value='-1' {$selected}>Unlimited</option>";
+		for($i=2; $i<151; $i++){
+			$selected = ($arb_occurances == $i) ? "selected='selected'" : "";
+			$options .= "<option value='{$i}' {$selected}>{$i}</option>";
+		}
+		
+		return $options;
+	}
 	
 //setting the default values
 	static function set_default_values(){
@@ -182,6 +205,9 @@ class AurhorizeNetEcheck{
            			field.label = "<?php _e("Is this a recurring gift?", "gravityfroms") ?>"
            		} 
            		
+           		field.inputs = [new Input(field.id + 0.1, '<?php echo esc_js(apply_filters("authorisenet_arb_intervals" . rgget("id"), apply_filters("authorisenet_arb_intervals",__("Recurring interval", "gravityforms"), rgget("id")), rgget("id"))); ?>'),
+           						new Input(field.id + 0.2, '<?php echo esc_js(apply_filters("authorisenet_arb_occurances" . rgget("id"), apply_filters("authorisenet_arb_occurances",__("Total Occurances", "gravityforms"), rgget("id")), rgget("id"))); ?>')]
+           		
            	   break;
 		<?php
 	}
@@ -192,7 +218,7 @@ class AurhorizeNetEcheck{
 		$options = '';
 		foreach($ac_types as $ac_type){
 			$selected = ($ac_type == $type) ? "selected='selected'" : "";
-			$options .= "<option value={$ac_type} {$selected} >{$ac_type}</option>";
+			$options .= "<option value='{$ac_type}' {$selected} >{$ac_type}</option>";
 		}
 		
 		return $options;
@@ -214,7 +240,9 @@ class AurhorizeNetEcheck{
 		$current_page = rgpost('gform_source_page_number_' . $form['id']) ? rgpost('gform_source_page_number_' . $form['id']) : 1;
 		//loop thouth the form fields
 		
-				
+		$creditcard_verified = false;
+		
+		
 		foreach ($form['fields'] as &$field){
 			// 6 - Get the field's page number
 			$field_page = $field['pageNumber'];
@@ -241,22 +269,35 @@ class AurhorizeNetEcheck{
 							$is_valid = false;
 						}
 						else{
-							$echeck_verified = true;
+							if($is_valid){
+								$response = self::make_echeck_payment($validation_result);
+								if($response){
+									$is_valid = true;
+									self::start_echeck_subscription($validation_result);
+								}
+								else{
+									$field["failed_validation"] = true;
+									$field["validation_message"] = self::get_echeck_error_message();
+									$is_valid = false;
+								}
+							}
 						}
 						
 					endif;
 					
 				break;
-				
-				case 'arb' :
-					$recurring_interval = trim($_POST["input_" . $field["id"]]);
+								
+				case 'creditcard' :
+					if($field["isRequired"]) :
+						if($is_valid){
+							self::start_creditcard_subscription($validation_result);
+						}						
+					endif;
+				break;
 					
 			}
 		}
-		
-		if($echeck_verified && $is_valid) :
-			$response = self::make_echeck_payment($validation_result);
-		endif;
+				
 		
 		$validation_result['form'] = $form;
 		$validation_result['is_valid'] = $is_valid;
@@ -264,39 +305,158 @@ class AurhorizeNetEcheck{
 	}	
 	
 	
+	/*
+	 * return echeck error message
+	 * */
+	static function get_echeck_error_message(){
+		if(is_object(self::$aim_response)){
+			return self::$aim_response->response_reason_text;
+		}
+	}
+	
 	//make the payment
 	private static function make_echeck_payment($validation_result){
 		$form_data = self::get_form_data($validation_result);
+				
 		
-		var_dump($form_data);
-		exit;
+		extract($form_data, EXTR_SKIP);
+		
+		if($amount == 0) return true;
 		
 		$sale = self::get_aim();
+		$sale->amount = $amount;
+		$sale->setECheck($bank_aba_code, $bank_acct_num, $bank_acct_type, $bank_name, $bank_acct_name, $echeck_type);
+		$response  = $sale->authorizeAndCapture();
+		
+		self::$aim_response = $response;
+		if($response->approved == true){
+			return true;
+		}
+
+		return false;
+		
 	}
 	
+	
+	/*
+	 * start reucrring subscription
+	 * */
+	static function start_echeck_subscription($validation_result){
+		$arb_info = self::get_arb_info($validation_result);
+		$form_data = self::get_form_data($validation_result);
+				
+		
+		extract($arb_info, EXTR_SKIP);
+		extract($form_data, EXTR_SKIP);
+		
+		if($interval_length == 0) return;
+		if($amount == 0) return;
+		
+		$subscription_start_date = gmdate("Y-m-d", strtotime("+ " . $interval_length . $interval_unit));
+		$occurances = ($occurances > 0) ? $occurances - 1 : 9999; //first time one payment is done
+		
+		$subscription = self::get_subscription();
+		
+		$subscription->intervalLength = $interval_length;
+		$subscription->intervalUnit = $interval_unit;
+		$subscription->startDate = $subscription_start_date;
+		$subscription->totalOccurrences = $occurances;
+		$subscription->amount = $amount;
+		$subscription->bankAccountAccountType = $bank_acct_type;
+		$subscription->bankAccountAccountNumber = $bank_acct_num;
+		$subscription->bankAccountRoutingNumber = $bank_aba_code;
+		$subscription->bankAccountEcheckType = $echeck_type;
+		$subscription->bankAccountBankName = $bank_name;
+		$subscription->bankAccountNameOnAccount = $bank_acct_name;
+		$subscription->orderInvoiceNumber = self::$aim_response->invoice_number;
+		
+		$arb = self::get_arb();
+		$arb->createSubscription($subscription);
+		
+	}
+	
+	
+	//
+	static function start_creditcard_subscription($validation_result){
+		$form_data = self::get_creditcard_info($validation_result);
+		$arb_fields = self::get_arb_info($validation_result);
+		$amount_fields = self::get_amount_info($validation_result["form"]);
+		
+		
+		extract($arb_fields, EXTR_SKIP);
+		extract($amount_fields, EXTR_SKIP);
+		
+		if($amount == 0) return;
+		if($interval_length == 0) return;
+		
+		$subscription_start_date = gmdate("Y-m-d", strtotime("+ " . $interval_length . $interval_unit));
+		$occurances = ($occurances > 0) ? $occurances - 1 : 9999;
+		
+		$subscription = self::get_subscription();
+		$subscription->intervalLength = $interval_length;
+		$subscription->intervalUnit = $interval_unit;
+		$subscription->startDate = $subscription_start_date;
+		$subscription->totalOccurrences = $occurances;
+		$subscription->amount = $amount;
+		
+		$exp_date = $form_data["expiration_date"][1] . "-" . str_pad($form_data["expiration_date"][0], 2, "0", STR_PAD_LEFT);
+		
+		$subscription->name = $form_data["first_name"] . " " . $form_data["last_name"];
+		$subscription->creditCardCardNumber = $form_data["card_number"];
+        $exp_date = $form_data["expiration_date"][1] . "-" . str_pad($form_data["expiration_date"][0], 2, "0", STR_PAD_LEFT);
+        $subscription->creditCardExpirationDate = $exp_date;
+        $subscription->creditCardCardCode = $form_data["security_code"];
+        var_dump($subscription);
+        $arb = self::get_arb();
+		$arb->createSubscription($subscription);
+		
+		
+	}
+	
+	static function get_creditcard_info($validation_result){
+		$form_data = array();
+		$form = $validation_result["form"];
+		
+		$card_field = self::get_creditcard_field($form);
+        $form_data["card_number"] = rgpost("input_{$card_field["id"]}_1");
+        $form_data["expiration_date"] = rgpost("input_{$card_field["id"]}_2");
+        $form_data["security_code"] = rgpost("input_{$card_field["id"]}_3");
+        $form_data["card_name"] = rgpost("input_{$card_field["id"]}_5");
+        
+		$names = explode(" ", $form_data["card_name"]);
+        $form_data["first_name"] = rgar($names,0);
+        $form_data["last_name"] = "";
+        if(count($names) > 0){
+            unset($names[0]);
+            $form_data["last_name"] = implode(" ", $names);
+        }
+		
+        return $form_data;
+	}
+	
+	static function get_creditcard_field($form){
+		$fields = GFCommon::get_fields_by_type($form, array("creditcard"));
+        return empty($fields) ? false : $fields[0];
+	}
 	
 	/*
 	 * return form data basically price
 	 * */
 	static function get_form_data($validation_result){
 		$form_data = array();
-		$form = $validation_result['form'];
-		$tmp_lead = RGFormsModel::create_lead($form);
-        $products = GFCommon::get_product_fields($form, $tmp_lead);
+		$form = $validation_result['form'];		
 
         $echeck_field = self::get_echeck_fields($form);
-        $recurring_field = self::get_arb_field($form);
-        
+       
         $form_data['bank_aba_code'] = rgpost("input_{$echeck_field["id"]}_1");
         $form_data['bank_acct_num'] = rgpost("input_{$echeck_field["id"]}_2");
         $form_data['bank_name'] = rgpost("input_{$echeck_field["id"]}_3");
         $form_data['bank_acct_name'] = rgpost("input_{$echeck_field["id"]}_4");
         $form_data['bank_acct_type'] = rgpost("input_{$echeck_field["id"]}_5");
         $form_data['echeck_type'] = "WEB";
-        $form_data['routing_interval'] = rgpost("input_{$recurring_field["id"]}");
-        
-        $order_info = self::get_order_info($products);
-        $form_data['amount'] = $order_info['amount'];
+
+        $amount_info = self::get_amount_info($form);
+        $form_data['amount'] = $amount_info['amount'];
         
         return $form_data;        
 	}
@@ -305,6 +465,28 @@ class AurhorizeNetEcheck{
 	static function get_echeck_fields($form){
 		$fields = GFCommon::get_fields_by_type($form, array("echeck"));
         return empty($fields) ? false : $fields[0];
+	}
+	
+	static function get_arb_info($validation_result){
+		$form_data = array();
+		
+		$form = $validation_result["form"];
+		$recurring_field = self::get_arb_field($form);
+		
+		$form_data['interval_length'] = rgpost("input_{$recurring_field["id"]}_1");
+        $form_data['occurances'] = rgpost("input_{$recurring_field["id"]}_2");
+        $form_data["interval_unit"] = "days";
+               
+        return $form_data;
+	}
+	
+	static function get_amount_info($form){
+		$form_data = array();
+		$tmp_lead = RGFormsModel::create_lead($form);
+        $products = GFCommon::get_product_fields($form, $tmp_lead);
+        $order_info = self::get_order_info($products);
+        $form_data['amount'] = $order_info['amount'];
+        return $form_data;
 	}
 	
 	static function get_arb_field($form){
@@ -326,6 +508,17 @@ class AurhorizeNetEcheck{
 		return $aim;
 	}
 	
+	
+	static function get_subscription(){
+		
+		if(!class_exists('AuthorizeNetRequest')){
+            require_once self::get_base_dir() . "/anet_php_sdk/AuthorizeNet.php";
+		}
+						
+		$subscription = new AuthorizeNet_Subscription();
+		
+		return $subscription;
+	}
 	
 	static function get_authorizenet_options(){
 		return AuthorizeNetSettings::get_authorizenet_options();
@@ -436,5 +629,27 @@ class AurhorizeNetEcheck{
         }
 
         return array("amount" => $amount, "line_items" => $line_items);
+    }
+    
+    //rgrequest
+    static function rgrequest($name){
+    	if(isset($_POST[$name]))
+        return $do_stripslashes ? stripslashes_deep($_POST[$name]) : $_POST[$name];
+
+    return "";
+    }
+    
+    //return the areb object
+	private static function get_arb(){
+        $settings = self::get_authorizenet_options();
+        $is_sandbox = $settings['mode'] == "test";
+		
+		if(!class_exists('AuthorizeNetRequest')){
+            require_once self::get_base_dir() . "/anet_php_sdk/AuthorizeNet.php";
+		}
+        
+        $arb = new AuthorizeNetARB($settings["api_login_id"], $settings["trans_key"]);
+        $arb->setSandbox($is_sandbox);
+        return $arb;
     }
 }

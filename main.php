@@ -1,6 +1,6 @@
 <?php 
 /*
- * Plugin Name: Gravity From addon Authorize.Net with Echeck Payment and ARB
+ * Plugin Name: Gravity Forms Authorize.Net Add-On ( Echeck + ARB )
  * Author: Mahibul Hasan Sohag
  * Description: Supports Echeck and ARB payment for Authorize.net
  * version: 1.0.0
