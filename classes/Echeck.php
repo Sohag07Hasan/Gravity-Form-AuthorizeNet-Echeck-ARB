@@ -23,10 +23,21 @@ class AurhorizeNetEcheck{
 		
 		add_filter('gform_validation', array(get_class(), 'validate'), 1000);
 		
+		add_filter('gform_validation', array(get_class(), 'validate_arb'), 0);
+		
 		//add javascript
 		add_action( "gform_editor_js", array(get_class(), "authorizenet_gform_editor_js"));
 		
+		add_action("wp_print_scripts", array(get_class(), 'add_js'));
+		
 	//	add_action( "gform_field_advanced_settings" , array(get_class(), "authorizenet_advanced_settings" , 10, 2 ));
+	}
+	
+	static function add_js(){
+		wp_enqueue_script('jquery');		
+		
+		wp_register_script('authorizenet_toggle', GfAuthorizeNetEcheckARB_URL . '/js/toggle.js');
+		wp_enqueue_script('authorizenet_toggle');
 	}
 	
 	
@@ -142,18 +153,22 @@ class AurhorizeNetEcheck{
 			$prefix = "<div class='ginput_complex ginput_container authorizenet_echeck_fields'>";		
 			
 			$arb_days = esc_attr(rgpost("input_" . $field["id"] . "_1"));
-			$arb_occurances = esc_attr(rgpost("input_" . $field["id"] . "_2"));			
+			$arb_occurances = esc_attr(rgpost("input_" . $field["id"] . "_2"));
+			$bill_fname = 	esc_attr(rgpost("input_" . $field["id"] . "_3"));
+			$bill_lname = esc_attr(rgpost("input_" . $field["id"] . "_4"));	
+						
+			$display_text = ($arb_days == 0 || empty($arb_days)) ? "style='display:none'" : "";
 						
 			$tabindex = GFCommon::get_tabindex();
-			$arb_interval_input = "<span class='ginput_left{$class_suffix}' id='{$field_id}_container' >" .
+			$arb_interval_input = "<span class='ginput_left{$class_suffix}' id='{$field_id}_container_1' >" .
 									
-									"<select $disabled_text name='input_{$id}_1' id='{$field_id}.1' >" . 
+									"<select class='arb-toggle-command' $disabled_text name='input_{$id}_1' id='{$field_id}.1' >" . 
 									self::get_arb_intervals($arb_days) . 									
 									"</select>" .
 									
 									"<label id='{$field_id}_4_label' for='{$field_id}_1'> select a recurring interval </label>" .
 									"</span>";
-			$arb_occurance_limit = "<span class='ginput_right{$class_suffix}' id='{$field_id}_container' >" .
+			$arb_occurance_limit = "<span {$display_text} class='ginput_right{$class_suffix} arb-interval-dependent' id='{$field_id}_container_2' >" .
 									
 									"<select $disabled_text name='input_{$id}_2' id='{$field_id}.2' >" . 
 									self::get_arb_occurances($arb_occurances) . 									
@@ -161,10 +176,16 @@ class AurhorizeNetEcheck{
 									
 									"<label id='{$field_id}_5_label' for='{$field_id}_2'> Total occurrances </label>" .
 									"</span>";
+									
+			$tabindex = GFCommon::get_tabindex();			
+			$billing_firstname = sprintf("<span {$display_text} class='ginput_left{$class_suffix} arb-interval-dependent' id='{$field_id}_1_container_3'><input type='text' name='input_%d_3' id='%s_1.3' value='%s' {$tabindex} %s /> <label for='%s_1.3' id='{$field_id}_3_label'>" . apply_filters("authorisenet_arb_fname_{$form_id}", apply_filters("authorisenet_arb_fname",__("Bill to firstname <span class='gfield_required'>*</span>", "gravityforms"), $form_id), $form_id) . "</label></span>", $id, $field_id, $bill_fname, $disabled_text, $field_id);
+			$tabindex = GFCommon::get_tabindex();
+			$billing_lastname = sprintf("<span {$display_text} class='ginput_right{$class_suffix} arb-interval-dependent' id='{$field_id}_1_container_4'><input type='text' name='input_%d_4' id='%s_1.4' value='%s' {$tabindex} %s /> <label for='%s_1.4' id='{$field_id}_3_label'>" . apply_filters("authorisenet_arb_lname_{$form_id}", apply_filters("authorisenet_arb_lname",__("Bill to lastname <span class='gfield_required'>*</span>", "gravityforms"), $form_id), $form_id) . "</label></span>", $id, $field_id, $bill_lname, $disabled_text, $field_id);			
+			
 			
 			$suffix = "</div>";
 			
-			return $prefix . $arb_interval_input . $arb_occurance_limit . $suffix;
+			return $prefix . $arb_interval_input . $arb_occurance_limit . $billing_firstname . $billing_lastname . $suffix;
 			
 		endif;
 		
@@ -232,7 +253,8 @@ class AurhorizeNetEcheck{
 		
 		$is_valid = $validation_result['is_valid'];
 		$echeck_verified = false;
-		$recurring_interval = 0;
+		$arb_verified = false;
+
 		
 		// 2 - Get the form object from the validation result
 		$form = $validation_result["form"];		
@@ -241,6 +263,7 @@ class AurhorizeNetEcheck{
 		//loop thouth the form fields
 		
 		$creditcard_verified = false;
+
 		
 		
 		foreach ($form['fields'] as &$field){
@@ -269,8 +292,11 @@ class AurhorizeNetEcheck{
 							$is_valid = false;
 						}
 						else{
+							//$echeck_verified = true;
+							
 							if($is_valid){
 								$response = self::make_echeck_payment($validation_result);
+								//$response = true;
 								if($response){
 									$is_valid = true;
 									self::start_echeck_subscription($validation_result);
@@ -281,6 +307,7 @@ class AurhorizeNetEcheck{
 									$is_valid = false;
 								}
 							}
+							
 						}
 						
 					endif;
@@ -294,6 +321,7 @@ class AurhorizeNetEcheck{
 						}						
 					endif;
 				break;
+						
 					
 			}
 		}
@@ -304,6 +332,120 @@ class AurhorizeNetEcheck{
 		return $validation_result;
 	}	
 	
+	/*
+	 * validate only arbresults
+	 * */
+	static function validate_arb($validation_result){
+		
+		$is_valid = $validation_result['is_valid'];
+		
+		
+		// 2 - Get the form object from the validation result
+		$form = $validation_result["form"];		
+		// 3 - Get the current page being validated
+		$current_page = rgpost('gform_source_page_number_' . $form['id']) ? rgpost('gform_source_page_number_' . $form['id']) : 1;
+		//loop thouth the form fields
+		
+		
+		
+		foreach ($form['fields'] as &$field){
+			// 6 - Get the field's page number
+			$field_page = $field['pageNumber'];
+			
+			// 7 - Check if the field is hidden by GF conditional logic
+			$is_hidden = RGFormsModel::is_field_hidden($form, $field, array());
+
+			// 8 - If the field is not on the current page OR if the field is hidden, skip it
+			if($field_page != $current_page || $is_hidden) continue;
+			
+			//now original validation occurs
+			switch(RGFormsModel::get_input_type($field)){
+				
+				case 'arb' :
+					
+					if($field["isRequired"]) :
+						$arb_days = esc_attr(rgpost("input_" . $field["id"] . "_1"));
+						$arb_occurances = esc_attr(rgpost("input_" . $field["id"] . "_2"));
+						$bill_fname = 	esc_attr(rgpost("input_" . $field["id"] . "_3"));
+						$bill_lname = esc_attr(rgpost("input_" . $field["id"] . "_4"));
+						if($arb_days > 0){
+							if(empty($bill_fname) || empty($bill_lname)){
+								$field["failed_validation"] = true;
+								$field["validation_message"] = "Please Provide Bill to Firstname and Lastname";
+								$is_valid = false;												
+							}
+						}
+						
+					endif;
+					
+				break;
+				
+					
+			}
+		}
+				
+		
+		$validation_result['form'] = $form;
+		$validation_result['is_valid'] = $is_valid;
+		return $validation_result;
+	}
+	
+	
+	/*
+	 * extract information from custom fields
+	 * */
+	static function extract_custom_fields($validation_result){
+				
+		$form = $validation_result["form"];
+		
+		$custom_fields = array();
+		
+		if($form["authorizeNet_enabled"] == true){
+			foreach(authorizenet_GF_Cfields::$tooltips as $key => $value) :
+				$key_1 = "authorizenet_" . $key;
+				$field_value = self::get_field_value($form[$key_1]);
+				if($field_value){
+					$custom_fields[$key] = $field_value;
+				}
+			endforeach;			
+		}
+		
+		$custom_fields['customer_ip'] = self::getRealIpAddr();
+		
+		if(count($custom_fields) > 0) return $custom_fields;
+		
+		return false;
+	}
+	
+	
+	
+	//returnt he customer real ip
+	static function getRealIpAddr(){
+	    if (!empty($_SERVER['HTTP_CLIENT_IP']))   //check ip from share internet
+	    {
+	      $ip=$_SERVER['HTTP_CLIENT_IP'];
+	    }
+	    elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR']))   //to check ip is pass from proxy
+	    {
+	      $ip=$_SERVER['HTTP_X_FORWARDED_FOR'];
+	    }
+	    else
+	    {
+	      $ip=$_SERVER['REMOTE_ADDR'];
+	    }
+	    return $ip;
+	}
+	
+	
+	static function get_field_value($key){
+		$inputs = explode(".", $key);
+			$name = "input_{$inputs[0]}";
+			if(isset($inputs[1])) $name .= "_{$inputs[1]}";		
+			if(isset($_REQUEST[$name])) return $_REQUEST[$name];			
+			return false;
+		
+		
+	}
 	
 	/*
 	 * return echeck error message
@@ -317,8 +459,8 @@ class AurhorizeNetEcheck{
 	//make the payment
 	private static function make_echeck_payment($validation_result){
 		$form_data = self::get_form_data($validation_result);
+		$custom_fields = self::extract_custom_fields($validation_result);		
 				
-		
 		extract($form_data, EXTR_SKIP);
 		
 		if($amount == 0) return true;
@@ -326,6 +468,16 @@ class AurhorizeNetEcheck{
 		$sale = self::get_aim();
 		$sale->amount = $amount;
 		$sale->setECheck($bank_aba_code, $bank_acct_num, $bank_acct_type, $bank_name, $bank_acct_name, $echeck_type);
+		
+		if(is_array($custom_fields)){
+			$customer = (object) array();
+			foreach($custom_fields as $key => $value){
+				$customer->$key = $value;
+			}
+			
+			$sale->setFields($customer);
+		}
+				
 		$response  = $sale->authorizeAndCapture();
 		
 		self::$aim_response = $response;
@@ -356,23 +508,26 @@ class AurhorizeNetEcheck{
 		$occurances = ($occurances > 0) ? $occurances - 1 : 9999; //first time one payment is done
 		
 		$subscription = self::get_subscription();
-		
+		$subscription->name = $bank_acct_name;
 		$subscription->intervalLength = $interval_length;
 		$subscription->intervalUnit = $interval_unit;
 		$subscription->startDate = $subscription_start_date;
 		$subscription->totalOccurrences = $occurances;
-		$subscription->amount = $amount;
-		$subscription->bankAccountAccountType = $bank_acct_type;
+		$subscription->amount = $amount;  
+		//$subscription->bankAccountAccountType = $bank_acct_type;
 		$subscription->bankAccountAccountNumber = $bank_acct_num;
 		$subscription->bankAccountRoutingNumber = $bank_aba_code;
 		$subscription->bankAccountEcheckType = $echeck_type;
 		$subscription->bankAccountBankName = $bank_name;
 		$subscription->bankAccountNameOnAccount = $bank_acct_name;
-		$subscription->orderInvoiceNumber = self::$aim_response->invoice_number;
+		$subscription->orderInvoiceNumber = self::$aim_response->invoice_number;		
+			
+		$subscription->billToFirstName = $billto_fname;
+		$subscription->billToLastName = $billto_lname;
 		
 		$arb = self::get_arb();
 		$arb->createSubscription($subscription);
-		
+				
 	}
 	
 	
@@ -406,7 +561,10 @@ class AurhorizeNetEcheck{
         $exp_date = $form_data["expiration_date"][1] . "-" . str_pad($form_data["expiration_date"][0], 2, "0", STR_PAD_LEFT);
         $subscription->creditCardExpirationDate = $exp_date;
         $subscription->creditCardCardCode = $form_data["security_code"];
-        var_dump($subscription);
+        
+        $subscription->billToFirstName = $billto_fname;
+		$subscription->billToLastName = $billto_fname;
+        //var_dump($subscription);
         $arb = self::get_arb();
 		$arb->createSubscription($subscription);
 		
@@ -476,13 +634,20 @@ class AurhorizeNetEcheck{
 		$form_data['interval_length'] = rgpost("input_{$recurring_field["id"]}_1");
         $form_data['occurances'] = rgpost("input_{$recurring_field["id"]}_2");
         $form_data["interval_unit"] = "days";
-               
+        
+        $bill_to_fname = rgpost("input_{$recurring_field["id"]}_3");
+        $bill_to_lname = rgpost("input_{$recurring_field["id"]}_4");
+        
+        $form_data['billto_fname'] = (empty($bill_to_fname)) ? "Unkknown" : $bill_to_fname;
+        $form_data['billto_lname'] = (empty($bill_to_lname)) ? "Unkknown" : $bill_to_lname;
+       // $form_data['billto_lname'] = (empty(rgpost("input_{$recurring_field["id"]}_1"))) ? "Unkknown" : rgpost("input_{$recurring_field["id"]}_4");    
         return $form_data;
 	}
 	
 	static function get_amount_info($form){
 		$form_data = array();
 		$tmp_lead = RGFormsModel::create_lead($form);
+			
         $products = GFCommon::get_product_fields($form, $tmp_lead);
         $order_info = self::get_order_info($products);
         $form_data['amount'] = $order_info['amount'];

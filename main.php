@@ -17,3 +17,6 @@ AuthorizeNetSettings::init();
 
 include GfAuthorizeNetEcheckARB . '/classes/Echeck.php';
 AurhorizeNetEcheck::init();
+
+include GfAuthorizeNetEcheckARB . '/classes/class.custom-fields.php';
+authorizenet_GF_Cfields::init();
