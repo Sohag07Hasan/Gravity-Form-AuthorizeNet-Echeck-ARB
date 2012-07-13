@@ -6,21 +6,7 @@ if (class_exists ( 'authorizenet_GF_Cfields' ))
 	return;
 
 class authorizenet_GF_Cfields {
-	/*
-	static $tooltips = array (
-		'firstname' => array ("First Name", "This field is mendatory so make it Required and pushes to authoirze.net" ), 
-		'lastname' => array ("Last Name", "This field is mendatory so make it Required and pushes to authorize.net" ), 
-		'donation_purpose' => array ("Purpose Of Donation", "This field is not required, This informatin will be pushed to authorize.net" ), 
-	//	'donor_ip' => array ("IP address", "This field accepts ip address"),
-		'donor_zip' => array("Zip Code", "This field accepts Zip code"),
-		'donor_email' => array('Email', "Email address of the donor"),
-		'donor_state' => array("State", "State"),
-		'donor_address' => array('Address', 'address of the donor'),
-		'donor_country' => array('Country', 'country of the donor')
-	);
-	*/
-	
-	
+		
 	static $tooltips = array (
 		'first_name' => array ("First Name", "This field is mendatory so make it Required and pushes to authoirze.net" ), 
 		'last_name' => array ("Last Name", "This field is mendatory so make it Required and pushes to authorize.net" ), 
@@ -36,8 +22,7 @@ class authorizenet_GF_Cfields {
 		'city' => array('City', 'Name of the city'),
 		'fax' => array('Fax', 'Fax number')
 	);
-	
-	
+		
 	//static $tooltips = array ('don_purpose' => array ("Purpose Of Donation", "This field is not required, This informatin will be pushed to authorize.net" ) );
 	
 	/*

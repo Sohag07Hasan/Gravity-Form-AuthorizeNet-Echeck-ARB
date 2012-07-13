@@ -524,6 +524,38 @@ class AurhorizeNetEcheck{
 			
 		$subscription->billToFirstName = $billto_fname;
 		$subscription->billToLastName = $billto_lname;
+		$billing_info = self::extract_custom_fields($validation_result);
+		
+		if(is_array($billing_info)) :
+			foreach($billing_info as $key => $value){
+				switch($key){
+					case 'zip' :
+						$subscription->billToZip = $value;
+						break;
+					case 'company' :
+						$subscription->billToCompany = $value;
+						break;
+					case 'address' :
+						$subscription->billToAddress = $value;
+						break;
+					case 'country' :
+						$subscription->billToCountry = $value;
+						break;
+					case 'state' :
+						$subscription->billToState = $value;
+						break;
+					case 'fax' :
+						$subscription->billToFax = $value;
+						break;
+					case 'phone' :
+						$subscription->billToPhone = $value;
+						break;
+					case 'city' :
+						$subscription->billToCity = $value;	
+					
+				}
+			}
+		endif;
 		
 		$arb = self::get_arb();
 		$arb->createSubscription($subscription);
@@ -564,6 +596,40 @@ class AurhorizeNetEcheck{
         
         $subscription->billToFirstName = $billto_fname;
 		$subscription->billToLastName = $billto_fname;
+		
+		$billing_info = self::extract_custom_fields($validation_result);
+		
+		if(is_array($billing_info)) :
+			foreach($billing_info as $key => $value){
+				switch($key){
+					case 'zip' :
+						$subscription->billToZip = $value;
+						break;
+					case 'company' :
+						$subscription->billToCompany = $value;
+						break;
+					case 'address' :
+						$subscription->billToAddress = $value;
+						break;
+					case 'country' :
+						$subscription->billToCountry = $value;
+						break;
+					case 'state' :
+						$subscription->billToState = $value;
+						break;
+					case 'fax' :
+						$subscription->billToFax = $value;
+						break;
+					case 'phone' :
+						$subscription->billToPhone = $value;
+						break;
+					case 'city' :
+						$subscription->billToCity = $value;	
+					
+				}
+			}
+		endif;
+		
         //var_dump($subscription);
         $arb = self::get_arb();
 		$arb->createSubscription($subscription);
